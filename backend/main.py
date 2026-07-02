@@ -1,9 +1,18 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from database import SessionLocal
 from models.teacher import Teacher
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
@@ -22,15 +31,13 @@ def get_teachers():
 
     teachers = db.query(Teacher).order_by(Teacher.name).all()
 
-    resultat = []
-
-    for teacher in teachers:
-        resultat.append(
-            {
-                "id": teacher.id,
-                "name": teacher.name,
-            }
-        )
+    resultat = [
+        {
+            "id": teacher.id,
+            "name": teacher.name,
+        }
+        for teacher in teachers
+    ]
 
     db.close()
 
