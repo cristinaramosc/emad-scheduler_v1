@@ -1,28 +1,42 @@
-import xml.etree.ElementTree as ET
+from database import SessionLocal
+from models.activity import Activity
+from models.teacher import Teacher
 
-FET_FILE = "../EMAD_2627_.fet"
+from services.fet_importer import load_activities
 
+db = SessionLocal()
 
-def load_fet():
-    tree = ET.parse(FET_FILE)
-    root = tree.getroot()
+# Esborrem dades antigues
+db.query(Activity).delete()
+db.query(Teacher).delete()
 
-    data = {}
+activities = load_activities("../EMAD_2627_.fet")
 
-    for section in root:
-        tag = section.tag
-        data[tag] = len(list(section))
+# Conjunt per no repetir professors
+teacher_names = set()
 
-    return data
+for a in activities:
 
+    if a["teacher"]:
+        teacher_names.add(a["teacher"])
 
-def main():
-    data = load_fet()
+    db.add(
+        Activity(
+            fet_id=a["fet_id"],
+            teacher=a["teacher"],
+            subject=a["subject"],
+            group_name=a["group_name"],
+            duration=a["duration"],
+        )
+    )
 
-    print("\n=== RESUM FET ===")
-    for k, v in data.items():
-        print(f"{k}: {v} elements")
+# Creem els professors
+for name in sorted(teacher_names):
+    db.add(Teacher(name=name))
 
+db.commit()
 
-if __name__ == "__main__":
-    main()
+print(f"{len(teacher_names)} professors importats.")
+print(f"{len(activities)} activitats importades.")
+
+db.close()
