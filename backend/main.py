@@ -20,11 +20,6 @@ def inici():
     return {"missatge": "EMAD Scheduler funciona!"}
 
 
-@app.get("/hola")
-def hola():
-    return {"hola": "Cristina"}
-
-
 @app.get("/teachers")
 def get_teachers():
     db = SessionLocal()
@@ -42,3 +37,28 @@ def get_teachers():
     db.close()
 
     return resultat
+
+
+@app.get("/activities")
+def get_activities(teacher_id: int):
+
+    return [
+        {
+            "id": 1,
+            "subject": "Dibuix",
+            "group": "GM1",
+            "room": "Aula 1",
+            "day": "Dilluns",
+            "start": "8:00",
+            "end": "10:00",
+        },
+        {
+            "id": 2,
+            "subject": "Projectes",
+            "group": "GM2",
+            "room": "Taller",
+            "day": "Dimecres",
+            "start": "15:00",
+            "end": "17:00",
+        },
+    ]
