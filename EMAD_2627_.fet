@@ -11298,7 +11298,7 @@
       <Day>Dimecres</Day>
       <Hour>16:00</Hour>
       <Permanently_Locked>true</Permanently_Locked>
-      <Active>true</Active>
+      <Active>false</Active>
       <Comments></Comments>
     </ConstraintActivityPreferredStartingTime>
     <ConstraintActivitiesSameStartingDay>
@@ -11306,7 +11306,7 @@
       <Number_of_Activities>2</Number_of_Activities>
       <Activity_Id>870</Activity_Id>
       <Activity_Id>871</Activity_Id>
-      <Active>true</Active>
+      <Active>false</Active>
       <Comments></Comments>
     </ConstraintActivitiesSameStartingDay>
     <ConstraintActivityPreferredStartingTime>
@@ -11315,7 +11315,7 @@
       <Day>Dilluns</Day>
       <Hour>15:00</Hour>
       <Permanently_Locked>true</Permanently_Locked>
-      <Active>true</Active>
+      <Active>false</Active>
       <Comments></Comments>
     </ConstraintActivityPreferredStartingTime>
     <ConstraintActivityPreferredStartingTime>
@@ -11324,7 +11324,7 @@
       <Day>Dimecres</Day>
       <Hour>15:00</Hour>
       <Permanently_Locked>true</Permanently_Locked>
-      <Active>true</Active>
+      <Active>false</Active>
       <Comments></Comments>
     </ConstraintActivityPreferredStartingTime>
     <ConstraintActivityPreferredStartingTime>
@@ -11333,7 +11333,7 @@
       <Day>Dilluns</Day>
       <Hour>8:30</Hour>
       <Permanently_Locked>true</Permanently_Locked>
-      <Active>true</Active>
+      <Active>false</Active>
       <Comments></Comments>
     </ConstraintActivityPreferredStartingTime>
     <ConstraintActivityPreferredStartingTime>
@@ -11342,7 +11342,7 @@
       <Day>Dilluns</Day>
       <Hour>9:30</Hour>
       <Permanently_Locked>true</Permanently_Locked>
-      <Active>true</Active>
+      <Active>false</Active>
       <Comments></Comments>
     </ConstraintActivityPreferredStartingTime>
     <ConstraintActivityPreferredStartingTime>
@@ -11351,7 +11351,7 @@
       <Day>Dimarts</Day>
       <Hour>12:00</Hour>
       <Permanently_Locked>true</Permanently_Locked>
-      <Active>true</Active>
+      <Active>false</Active>
       <Comments></Comments>
     </ConstraintActivityPreferredStartingTime>
     <ConstraintActivityPreferredStartingTime>
@@ -11360,7 +11360,7 @@
       <Day>Divendres</Day>
       <Hour>11:00</Hour>
       <Permanently_Locked>true</Permanently_Locked>
-      <Active>true</Active>
+      <Active>false</Active>
       <Comments></Comments>
     </ConstraintActivityPreferredStartingTime>
     <ConstraintActivityPreferredStartingTime>
@@ -11369,7 +11369,7 @@
       <Day>Divendres</Day>
       <Hour>13:00</Hour>
       <Permanently_Locked>true</Permanently_Locked>
-      <Active>true</Active>
+      <Active>false</Active>
       <Comments></Comments>
     </ConstraintActivityPreferredStartingTime>
     <ConstraintActivityPreferredStartingTime>
@@ -11378,7 +11378,7 @@
       <Day>Dijous</Day>
       <Hour>11:00</Hour>
       <Permanently_Locked>true</Permanently_Locked>
-      <Active>true</Active>
+      <Active>false</Active>
       <Comments></Comments>
     </ConstraintActivityPreferredStartingTime>
     <ConstraintActivityPreferredStartingTime>
@@ -11387,7 +11387,7 @@
       <Day>Dimarts</Day>
       <Hour>13:30</Hour>
       <Permanently_Locked>true</Permanently_Locked>
-      <Active>true</Active>
+      <Active>false</Active>
       <Comments></Comments>
     </ConstraintActivityPreferredStartingTime>
     <ConstraintActivityPreferredStartingTime>
@@ -11396,7 +11396,7 @@
       <Day>Dimecres</Day>
       <Hour>8:30</Hour>
       <Permanently_Locked>true</Permanently_Locked>
-      <Active>true</Active>
+      <Active>false</Active>
       <Comments></Comments>
     </ConstraintActivityPreferredStartingTime>
     <ConstraintActivityPreferredStartingTime>
@@ -11405,7 +11405,7 @@
       <Day>Dijous</Day>
       <Hour>11:00</Hour>
       <Permanently_Locked>true</Permanently_Locked>
-      <Active>true</Active>
+      <Active>false</Active>
       <Comments></Comments>
     </ConstraintActivityPreferredStartingTime>
     <ConstraintActivityPreferredStartingTime>
@@ -11414,7 +11414,7 @@
       <Day>Dijous</Day>
       <Hour>15:00</Hour>
       <Permanently_Locked>true</Permanently_Locked>
-      <Active>true</Active>
+      <Active>false</Active>
       <Comments></Comments>
     </ConstraintActivityPreferredStartingTime>
   </Time_Constraints_List>

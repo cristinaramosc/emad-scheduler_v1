@@ -1,6 +1,13 @@
+from scheduler_engine.constraints import TeacherConflictConstraint
+
+
 class SchedulerEngine:
+    """Core scheduling engine."""
+
     def __init__(self):
-        self.constraints = []
+        self.constraints = [
+            TeacherConflictConstraint(),
+        ]
 
     def add_constraint(self, constraint):
         self.constraints.append(constraint)
@@ -12,11 +19,3 @@ class SchedulerEngine:
             conflicts.extend(constraint.validate(schedule))
 
         return conflicts
-    from scheduler_engine.constraints import TeacherConflictConstraint
-
-class SchedulerEngine:
-
-    def __init__(self):
-        self.constraints = [
-            TeacherConflictConstraint(),
-        ]

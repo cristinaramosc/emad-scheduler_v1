@@ -1,25 +1,41 @@
-from .base import Constraint
+from scheduler_engine.constraints.base import Constraint
+from scheduler_engine.models import Conflict
+
 
 class TeacherConflictConstraint(Constraint):
-    """Detects if a teacher is assigned to more than one lesson
-    in the same time slot.
-    """
+    """Detecta si un professor té dues activitats al mateix dia i hora."""
 
     def validate(self, schedule):
         conflicts = []
         occupied = {}
 
-        for lesson in schedule.all():
-            key = (lesson.teacher_id, lesson.timeslot)
+        for activity in schedule.all():
+            key = (
+                activity.teacher,
+                activity.day,
+                activity.start,
+            )
 
             if key in occupied:
-                conflicts.append({
-                    "type": "teacher_conflict",
-                    "teacher_id": lesson.teacher_id,
-                    "timeslot": lesson.timeslot,
-                    "lessons": [occupied[key], lesson],
-                })
+                conflicts.append(
+                    Conflict(
+                        type="teacher_conflict",
+                        message=(
+                            f"Teacher '{activity.teacher}' has more than one "
+                            f"activity on {activity.day} at {activity.start}."
+                        ),
+                        data={
+                            "teacher": activity.teacher,
+                            "day": activity.day,
+                            "start": activity.start,
+                            "activities": [
+                                occupied[key].id,
+                                activity.id,
+                            ],
+                        },
+                    )
+                )
             else:
-                occupied[key] = lesson
+                occupied[key] = activity
 
         return conflicts

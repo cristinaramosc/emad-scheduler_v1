@@ -1,3 +1,6 @@
+import React from "react";
+import ActivityCard from "./ActivityCard";
+
 const days = [
   "Dilluns",
   "Dimarts",
@@ -31,10 +34,10 @@ const hours = [
   "18:30",
   "19:00",
   "19:30",
-    "20:00",
+  "20:00",
 ];
 
-const CELL_HEIGHT = 32;
+const CELL_HEIGHT = 36;
 
 export default function Timetable({ activities }) {
   return (
@@ -42,87 +45,86 @@ export default function Timetable({ activities }) {
       style={{
         position: "relative",
         display: "grid",
-        gridTemplateColumns: `80px repeat(${days.length},1fr)`,
-        gridTemplateRows: `40px repeat(${hours.length},${CELL_HEIGHT}px)`,
-        border: "1px solid #bbb",
+        gridTemplateColumns: `80px repeat(${days.length}, 1fr)`,
+        gridTemplateRows: `40px repeat(${hours.length}, ${CELL_HEIGHT}px)`,
+        border: "1px solid #d0d7de",
+        borderRadius: 10,
+        overflow: "hidden",
+        background: "white",
       }}
     >
-      {/* capçalera */}
+      {/* cantonada superior esquerra */}
+      <div
+        style={{
+          background: "#f8f9fb",
+          borderBottom: "1px solid #d0d7de",
+        }}
+      />
 
-      <div />
-
-      {days.map((d) => (
+      {/* dies */}
+      {days.map((day) => (
         <div
-          key={d}
+          key={day}
           style={{
-            borderLeft: "1px solid #ddd",
-            borderBottom: "1px solid #ddd",
-            fontWeight: "bold",
-            textAlign: "center",
-            paddingTop: 10,
-            background: "#f5f5f5",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#f8f9fb",
+            borderLeft: "1px solid #d0d7de",
+            borderBottom: "1px solid #d0d7de",
+            fontWeight: 600,
           }}
         >
-          {d}
+          {day}
         </div>
       ))}
 
-      {/* hores */}
-
-      {hours.map((h, row) => (
-        <>
+      {/* hores + cel·les */}
+      {hours.map((hour) => (
+        <React.Fragment key={hour}>
           <div
-            key={h}
             style={{
-              borderTop: "1px solid #eee",
-              padding: 4,
+              padding: "6px",
               fontSize: 12,
+              color: "#666",
+              borderTop: "1px solid #eee",
+              background: "#fafafa",
             }}
           >
-            {h}
+            {hour}
           </div>
 
-          {days.map((d) => (
+          {days.map((day) => (
             <div
-              key={d + h}
+              key={`${day}-${hour}`}
               style={{
                 borderLeft: "1px solid #eee",
                 borderTop: "1px solid #eee",
+                background: "white",
               }}
             />
           ))}
-        </>
+        </React.Fragment>
       ))}
 
       {/* activitats */}
-
-      {activities.map((a) => {
-
-        const col = days.indexOf(a.day) + 2;
-
-        const row = hours.indexOf(a.start) + 2;
+      {activities.map((activity) => {
+        const col = days.indexOf(activity.day) + 2;
+        const row = hours.indexOf(activity.start) + 2;
 
         if (col < 2 || row < 2) return null;
 
         return (
           <div
-            key={a.id}
+            key={activity.id}
             style={{
               gridColumn: col,
-              gridRow: `${row} / span ${a.duration}`,
-              margin: 2,
-              background: "#90caf9",
-              borderRadius: 6,
-              padding: 6,
-              overflow: "hidden",
-              fontSize: 12,
+              gridRow: `${row} / span ${activity.duration}`,
+              padding: 2,
+              zIndex: 10,
             }}
           >
-            <strong>{a.subject}</strong>
-
-            <br />
-
-            {a.group}
+            <ActivityCard activity={activity} />
           </div>
         );
       })}

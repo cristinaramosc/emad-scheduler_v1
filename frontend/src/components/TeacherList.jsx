@@ -1,27 +1,29 @@
-function TeacherList({ teachers, selectedTeacher, onSelect }) {
+export default function TeacherList({
+  teachers,
+  selectedTeacher,
+  onSelect,
+}) {
   return (
-    <div>
-      <h2>Professors</h2>
+    <div className="teacher-list">
 
-      <ul style={{ listStyle: "none", padding: 0 }}>
-        {teachers.map((teacher) => (
-          <li
-            key={teacher.id}
-            onClick={() => onSelect(teacher)}
-            style={{
-              padding: "8px",
-              cursor: "pointer",
-              borderBottom: "1px solid #ddd",
-              backgroundColor:
-                selectedTeacher?.id === teacher.id ? "#dbeafe" : "white",
-            }}
-          >
-            {teacher.name}
-          </li>
-        ))}
-      </ul>
+      <h3>Professors</h3>
+
+      {teachers.map((teacher) => (
+
+        <button
+          key={teacher.id}
+          onClick={() => onSelect(teacher)}
+          className={
+            selectedTeacher?.id === teacher.id
+              ? "teacher active"
+              : "teacher"
+          }
+        >
+          {teacher.name}
+        </button>
+
+      ))}
+
     </div>
   );
 }
-
-export default TeacherList;
