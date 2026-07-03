@@ -23,3 +23,6 @@ class SchedulerEngine:
             conflicts.extend(c.validate(schedule))
 
         return conflicts
+
+    def get_conflicts(self):
+        return self.validate()

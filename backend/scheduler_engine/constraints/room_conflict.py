@@ -17,6 +17,11 @@ class RoomConflictConstraint(Constraint):
             )
 
             if key in occupied:
+                activities = [
+                    occupied[key].id,
+                    activity.id,
+                ]
+
                 conflicts.append(
                     Conflict(
                         type="room_conflict",
@@ -24,14 +29,15 @@ class RoomConflictConstraint(Constraint):
                             f"Room '{activity.room}' is occupied on "
                             f"{activity.day} at {activity.start}."
                         ),
+                        room=activity.room,
+                        day=activity.day,
+                        start=activity.start,
+                        activities=activities,
                         data={
                             "room": activity.room,
                             "day": activity.day,
                             "start": activity.start,
-                            "activities": [
-                                occupied[key].id,
-                                activity.id,
-                            ],
+                            "activities": activities,
                         },
                     )
                 )
