@@ -1,24 +1,73 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-const HOURS = ["08:00", "10:00", "12:00", "14:00"];
+const API_URL = "http://127.0.0.1:8000";
+
+const DAYS = ["Dilluns", "Dimarts", "Dimecres", "Dijous", "Divendres"];
+
+const HOURS = [
+  "8:00",
+  "8:30",
+  "9:00",
+  "9:30",
+  "10:00",
+  "10:30",
+  "11:00",
+  "11:30",
+  "12:00",
+  "12:30",
+  "13:00",
+  "13:30",
+  "14:00",
+  "14:30",
+  "15:00",
+  "15:30",
+  "16:00",
+  "16:30",
+  "17:00",
+  "17:30",
+  "18:00",
+  "18:30",
+  "19:00",
+  "19:30",
+  "20:00",
+  "20:30",
+  "21:00",
+];
+
+function activityKey(activity) {
+  return `${activity.day}-${activity.start}`;
+}
+
+function conflictActivityIds(conflicts) {
+  return new Set(
+    conflicts.flatMap((conflict) => conflict.activities || conflict.data?.activities || [])
+  );
+}
 
 export default function App() {
   const [activities, setActivities] = useState([]);
   const [conflicts, setConflicts] = useState([]);
+  const [draggedActivityId, setDraggedActivityId] = useState(null);
+  const [dropTarget, setDropTarget] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
 
   async function loadData() {
-    try {
-      const res = await fetch("http://127.0.0.1:8000/scheduler/state");
-      const data = await res.json();
+    setIsLoading(true);
+    setError("");
 
-      console.log(data);
+    try {
+      const response = await fetch(`${API_URL}/scheduler/state`);
+      const data = await response.json();
 
       setActivities(data.activities || []);
       setConflicts(data.conflicts || []);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      setError("No s'ha pogut carregar l'horari.");
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -26,71 +75,187 @@ export default function App() {
     loadData();
   }, []);
 
-  function hasConflict(activity) {
-    return conflicts.some(
-      (c) =>
-        c.teacher === activity.teacher &&
-        c.day === activity.day &&
-        c.start === activity.start
+  const activitiesBySlot = useMemo(() => {
+    return activities.reduce((slots, activity) => {
+      const key = activityKey(activity);
+
+      if (!slots[key]) {
+        slots[key] = [];
+      }
+
+      slots[key].push(activity);
+
+      return slots;
+    }, {});
+  }, [activities]);
+
+  const conflictIds = useMemo(() => conflictActivityIds(conflicts), [conflicts]);
+
+  const unscheduledActivities = useMemo(() => {
+    return activities.filter(
+      (activity) => !DAYS.includes(activity.day) || !HOURS.includes(activity.start)
+    );
+  }, [activities]);
+
+  async function moveActivity(activityId, day, start) {
+    setIsSaving(true);
+    setError("");
+
+    try {
+      const response = await fetch(`${API_URL}/scheduler/move`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          activity_id: activityId,
+          day,
+          start,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.ok) {
+        setError("No s'ha pogut moure l'activitat.");
+      }
+
+      setActivities(data.activities || []);
+      setConflicts(data.conflicts || []);
+    } catch {
+      setError("No s'ha pogut desar el moviment.");
+    } finally {
+      setIsSaving(false);
+      setDraggedActivityId(null);
+      setDropTarget(null);
+    }
+  }
+
+  function handleDragStart(activityId) {
+    setDraggedActivityId(activityId);
+  }
+
+  function handleDragOver(event, day, start) {
+    event.preventDefault();
+    setDropTarget(`${day}-${start}`);
+  }
+
+  function handleDrop(event, day, start) {
+    event.preventDefault();
+
+    if (draggedActivityId === null) {
+      return;
+    }
+
+    moveActivity(draggedActivityId, day, start);
+  }
+
+  function renderActivity(activity) {
+    const hasConflict = conflictIds.has(activity.id);
+
+    return (
+      <article
+        key={activity.id}
+        className={hasConflict ? "activity-card activity-card--conflict" : "activity-card"}
+        draggable
+        onDragStart={() => handleDragStart(activity.id)}
+        onDragEnd={() => {
+          setDraggedActivityId(null);
+          setDropTarget(null);
+        }}
+      >
+        <strong>{activity.subject}</strong>
+        <span>{activity.teacher}</span>
+        <small>
+          {activity.group}
+          {activity.room ? ` · ${activity.room}` : ""}
+        </small>
+      </article>
     );
   }
 
   return (
-    <div className="app">
-      <h1>EMAD Scheduler</h1>
+    <main className="app-shell">
+      <header className="topbar">
+        <div>
+          <h1>EMAD Scheduler</h1>
+          <p>{activities.length} activitats · {conflicts.length} conflictes</p>
+        </div>
 
-      <button onClick={loadData}>Reload</button>
+        <button type="button" onClick={loadData} disabled={isLoading || isSaving}>
+          {isLoading ? "Carregant" : "Actualitza"}
+        </button>
+      </header>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Hora</th>
+      {error && <div className="notice notice--error">{error}</div>}
+      {isSaving && <div className="notice">Desant moviment</div>}
 
-            {DAYS.map((d) => (
-              <th key={d}>{d}</th>
-            ))}
-          </tr>
-        </thead>
+      <section className="scheduler-layout">
+        <div className="timetable" aria-label="Horari">
+          <div className="corner-cell" />
 
-        <tbody>
+          {DAYS.map((day) => (
+            <div key={day} className="day-header">
+              {day}
+            </div>
+          ))}
+
           {HOURS.map((hour) => (
-            <tr key={hour}>
-              <td className="hour">{hour}</td>
+            <React.Fragment key={hour}>
+              <div className="hour-cell">{hour}</div>
 
               {DAYS.map((day) => {
-                const list = activities.filter(
-                  (a) => a.day === day && a.start === hour
-                );
+                const key = `${day}-${hour}`;
+                const slotActivities = activitiesBySlot[key] || [];
+                const isDropTarget = dropTarget === key;
 
                 return (
-                  <td key={day + hour}>
-                    {list.map((a) => (
-                      <div
-                        key={a.id}
-                        className={
-                          hasConflict(a) ? "activity conflict" : "activity"
-                        }
-                      >
-                        <strong>{a.subject}</strong>
-
-                        <div>{a.teacher}</div>
-
-                        <div>
-                          {a.group} · {a.room}
-                        </div>
-                      </div>
-                    ))}
-                  </td>
+                  <div
+                    key={key}
+                    className={isDropTarget ? "slot slot--target" : "slot"}
+                    onDragOver={(event) => handleDragOver(event, day, hour)}
+                    onDragLeave={() => setDropTarget(null)}
+                    onDrop={(event) => handleDrop(event, day, hour)}
+                  >
+                    {slotActivities.map(renderActivity)}
+                  </div>
                 );
               })}
-            </tr>
+            </React.Fragment>
           ))}
-        </tbody>
-      </table>
+        </div>
 
-      <h2>Conflicts</h2>
+        <aside className="side-panel">
+          <section>
+            <h2>Conflictes</h2>
 
-      <pre>{JSON.stringify(conflicts, null, 2)}</pre>
-    </div>
+            {conflicts.length === 0 ? (
+              <p className="muted">Cap conflicte detectat.</p>
+            ) : (
+              <ul className="conflict-list">
+                {conflicts.map((conflict, index) => (
+                  <li key={`${conflict.type}-${index}`}>
+                    <strong>{conflict.type}</strong>
+                    <span>{conflict.message}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section>
+            <h2>Sense franja</h2>
+
+            {unscheduledActivities.length === 0 ? (
+              <p className="muted">Cap activitat pendent.</p>
+            ) : (
+              <div className="unscheduled-list">
+                {unscheduledActivities.map(renderActivity)}
+              </div>
+            )}
+          </section>
+        </aside>
+      </section>
+    </main>
   );
 }
