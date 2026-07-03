@@ -1,4 +1,7 @@
-from scheduler_engine.constraints import TeacherConflictConstraint
+from scheduler_engine.constraints import (
+    TeacherConflictConstraint,
+    RoomConflictConstraint,
+)
 
 
 class SchedulerEngine:
@@ -7,6 +10,7 @@ class SchedulerEngine:
     def __init__(self):
         self.constraints = [
             TeacherConflictConstraint(),
+            RoomConflictConstraint(),
         ]
 
     def add_constraint(self, constraint):
