@@ -1,3 +1,1 @@
-from sqlalchemy import Column, Integer, String
-from database import Base
-from .conflict import Conflict
+# Evitem imports automàtics per evitar errors en cascada

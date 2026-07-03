@@ -32,7 +32,8 @@ def test_room_conflict():
     )
 
     engine = SchedulerEngine()
+    engine.load(schedule)
 
-    conflicts = engine.validate(schedule)
+    conflicts = engine.get_conflicts()
 
     assert any(c.type == "room_conflict" for c in conflicts)

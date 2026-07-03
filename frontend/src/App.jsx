@@ -1,94 +1,96 @@
-import { useEffect, useState } from "react";
-import TeacherList from "./components/TeacherList";
-import Timetable from "./components/Timetable";
-import "./index.css";
+import React, { useEffect, useState } from "react";
+import "./App.css";
 
-const API = "http://127.0.0.1:8000";
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+const HOURS = ["08:00", "10:00", "12:00", "14:00"];
 
 export default function App() {
-  const [teachers, setTeachers] = useState([]);
-  const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [activities, setActivities] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [conflicts, setConflicts] = useState([]);
 
-  useEffect(() => {
-    loadTeachers();
-  }, []);
-
-  async function loadTeachers() {
+  async function loadData() {
     try {
-      const res = await fetch(`${API}/teachers`);
+      const res = await fetch("http://127.0.0.1:8000/scheduler/state");
       const data = await res.json();
-      setTeachers(data);
+
+      console.log(data);
+
+      setActivities(data.activities || []);
+      setConflicts(data.conflicts || []);
     } catch (err) {
       console.error(err);
     }
   }
 
-  async function selectTeacher(teacher) {
-    setSelectedTeacher(teacher);
-    setLoading(true);
+  useEffect(() => {
+    loadData();
+  }, []);
 
-    try {
-      const res = await fetch(
-        `${API}/activities?teacher_id=${teacher.id}`
-      );
-
-      const data = await res.json();
-      setActivities(data);
-    } catch (err) {
-      console.error(err);
-    }
-
-    setLoading(false);
+  function hasConflict(activity) {
+    return conflicts.some(
+      (c) =>
+        c.teacher === activity.teacher &&
+        c.day === activity.day &&
+        c.start === activity.start
+    );
   }
 
   return (
     <div className="app">
-      <aside className="sidebar">
-        <div className="logo">
-          <h1>EMAD Scheduler</h1>
-          <p>Editor d'horaris</p>
-        </div>
+      <h1>EMAD Scheduler</h1>
 
-        <TeacherList
-          teachers={teachers}
-          selectedTeacher={selectedTeacher}
-          onSelect={selectTeacher}
-        />
-      </aside>
+      <button onClick={loadData}>Reload</button>
 
-      <main className="content">
-        <header className="toolbar">
-          <div>
-            <h2>
-              {selectedTeacher
-                ? selectedTeacher.name
-                : "Selecciona un professor"}
-            </h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Hora</th>
 
-            <span>
-              {selectedTeacher
-                ? `${activities.length} activitats`
-                : ""}
-            </span>
-          </div>
-        </header>
+            {DAYS.map((d) => (
+              <th key={d}>{d}</th>
+            ))}
+          </tr>
+        </thead>
 
-        <div className="main-content">
-          {!selectedTeacher ? (
-            <div className="empty">
-              Selecciona un professor per veure l'horari.
-            </div>
-          ) : loading ? (
-            <div className="empty">
-              Carregant...
-            </div>
-          ) : (
-            <Timetable activities={activities} />
-          )}
-        </div>
-      </main>
+        <tbody>
+          {HOURS.map((hour) => (
+            <tr key={hour}>
+              <td className="hour">{hour}</td>
+
+              {DAYS.map((day) => {
+                const list = activities.filter(
+                  (a) => a.day === day && a.start === hour
+                );
+
+                return (
+                  <td key={day + hour}>
+                    {list.map((a) => (
+                      <div
+                        key={a.id}
+                        className={
+                          hasConflict(a) ? "activity conflict" : "activity"
+                        }
+                      >
+                        <strong>{a.subject}</strong>
+
+                        <div>{a.teacher}</div>
+
+                        <div>
+                          {a.group} · {a.room}
+                        </div>
+                      </div>
+                    ))}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <h2>Conflicts</h2>
+
+      <pre>{JSON.stringify(conflicts, null, 2)}</pre>
     </div>
   );
 }

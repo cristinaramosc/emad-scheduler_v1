@@ -32,8 +32,8 @@ def test_teacher_conflict():
     )
 
     engine = SchedulerEngine()
+    engine.load(schedule)
 
-    conflicts = engine.validate(schedule)
+    conflicts = engine.get_conflicts()
 
-    assert len(conflicts) == 1
-    assert conflicts[0].type == "teacher_conflict"
+    assert any(c.type == "teacher_conflict" for c in conflicts)

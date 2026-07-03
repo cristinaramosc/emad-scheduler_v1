@@ -1,25 +1,25 @@
-from scheduler_engine.constraints import (
-    TeacherConflictConstraint,
-    RoomConflictConstraint,
-)
+from scheduler_engine.models.schedule import Schedule
+from scheduler_engine.constraints.teacher_conflict import TeacherConflictConstraint
+from scheduler_engine.constraints.room_conflict import RoomConflictConstraint
 
 
 class SchedulerEngine:
-    """Core scheduling engine."""
-
     def __init__(self):
+        self.state = Schedule()
         self.constraints = [
             TeacherConflictConstraint(),
             RoomConflictConstraint(),
         ]
 
-    def add_constraint(self, constraint):
-        self.constraints.append(constraint)
+    def load(self, schedule: Schedule):
+        self.state = schedule
 
-    def validate(self, schedule):
+    def validate(self, schedule=None):
+        if schedule is None:
+            schedule = self.state
+
         conflicts = []
-
-        for constraint in self.constraints:
-            conflicts.extend(constraint.validate(schedule))
+        for c in self.constraints:
+            conflicts.extend(c.validate(schedule))
 
         return conflicts

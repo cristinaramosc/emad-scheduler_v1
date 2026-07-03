@@ -1,15 +1,14 @@
 from dataclasses import dataclass, field
 
-
 @dataclass
 class Schedule:
-    activities: list = field(default_factory=list)
+    lessons: list = field(default_factory=list)
 
-    def add(self, activity):
-        self.activities.append(activity)
+    def add(self, lesson):
+        self.lessons.append(lesson)
 
-    def remove(self, activity):
-        self.activities.remove(activity)
+    def remove(self, lesson):
+        self.lessons.remove(lesson)
 
     def all(self):
-        return self.activities
+        return self.lessons
