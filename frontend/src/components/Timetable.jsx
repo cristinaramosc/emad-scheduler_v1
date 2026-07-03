@@ -1,105 +1,131 @@
-const days = ["Dilluns", "Dimarts", "Dimecres", "Dijous", "Divendres"];
+const days = [
+  "Dilluns",
+  "Dimarts",
+  "Dimecres",
+  "Dijous",
+  "Divendres",
+];
 
 const hours = [
   "8:00",
+  "8:30",
   "9:00",
+  "9:30",
   "10:00",
+  "10:30",
   "11:00",
+  "11:30",
   "12:00",
+  "12:30",
   "13:00",
+  "13:30",
   "14:00",
+  "14:30",
   "15:00",
+  "15:30",
   "16:00",
+  "16:30",
   "17:00",
+  "17:30",
   "18:00",
+  "18:30",
   "19:00",
+  "19:30",
     "20:00",
 ];
 
-function Timetable({ activities }) {
-  function activityAt(day, hour) {
-    return activities.find(
-      (a) => a.day === day && a.start === hour
-    );
-  }
+const CELL_HEIGHT = 32;
 
+export default function Timetable({ activities }) {
   return (
-    <table
+    <div
       style={{
-        borderCollapse: "collapse",
-        width: "100%",
+        position: "relative",
+        display: "grid",
+        gridTemplateColumns: `80px repeat(${days.length},1fr)`,
+        gridTemplateRows: `40px repeat(${hours.length},${CELL_HEIGHT}px)`,
+        border: "1px solid #bbb",
       }}
     >
-      <thead>
-        <tr>
-          <th style={{ border: "1px solid #ccc", padding: 8 }}></th>
+      {/* capçalera */}
 
-          {days.map((day) => (
-            <th
-              key={day}
+      <div />
+
+      {days.map((d) => (
+        <div
+          key={d}
+          style={{
+            borderLeft: "1px solid #ddd",
+            borderBottom: "1px solid #ddd",
+            fontWeight: "bold",
+            textAlign: "center",
+            paddingTop: 10,
+            background: "#f5f5f5",
+          }}
+        >
+          {d}
+        </div>
+      ))}
+
+      {/* hores */}
+
+      {hours.map((h, row) => (
+        <>
+          <div
+            key={h}
+            style={{
+              borderTop: "1px solid #eee",
+              padding: 4,
+              fontSize: 12,
+            }}
+          >
+            {h}
+          </div>
+
+          {days.map((d) => (
+            <div
+              key={d + h}
               style={{
-                border: "1px solid #ccc",
-                padding: 8,
-                background: "#f3f4f6",
+                borderLeft: "1px solid #eee",
+                borderTop: "1px solid #eee",
               }}
-            >
-              {day}
-            </th>
+            />
           ))}
-        </tr>
-      </thead>
+        </>
+      ))}
 
-      <tbody>
-        {hours.map((hour) => (
-          <tr key={hour}>
-            <td
-              style={{
-                border: "1px solid #ccc",
-                padding: 8,
-                fontWeight: "bold",
-              }}
-            >
-              {hour}
-            </td>
+      {/* activitats */}
 
-            {days.map((day) => {
-              const activity = activityAt(day, hour);
+      {activities.map((a) => {
 
-              return (
-                <td
-                  key={day + hour}
-                  style={{
-                    border: "1px solid #ddd",
-                    width: 150,
-                    height: 60,
-                    verticalAlign: "top",
-                    padding: 4,
-                  }}
-                >
-                  {activity && (
-                    <div
-                      style={{
-                        background: "#bfdbfe",
-                        borderRadius: 6,
-                        padding: 6,
-                        fontSize: 13,
-                      }}
-                    >
-                      <strong>{activity.subject}</strong>
-                      <br />
-                      {activity.group}
-                      <br />
-                      {activity.room}
-                    </div>
-                  )}
-                </td>
-              );
-            })}
-          </tr>
-        ))}
-      </tbody>
-    </table>
+        const col = days.indexOf(a.day) + 2;
+
+        const row = hours.indexOf(a.start) + 2;
+
+        if (col < 2 || row < 2) return null;
+
+        return (
+          <div
+            key={a.id}
+            style={{
+              gridColumn: col,
+              gridRow: `${row} / span ${a.duration}`,
+              margin: 2,
+              background: "#90caf9",
+              borderRadius: 6,
+              padding: 6,
+              overflow: "hidden",
+              fontSize: 12,
+            }}
+          >
+            <strong>{a.subject}</strong>
+
+            <br />
+
+            {a.group}
+          </div>
+        );
+      })}
+    </div>
   );
 }
-
-export default Timetable;

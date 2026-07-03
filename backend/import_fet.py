@@ -20,15 +20,17 @@ for a in activities:
     if a["teacher"]:
         teacher_names.add(a["teacher"])
 
-    db.add(
-        Activity(
-            fet_id=a["fet_id"],
-            teacher=a["teacher"],
-            subject=a["subject"],
-            group_name=a["group_name"],
-            duration=a["duration"],
-        )
+db.add(
+    Activity(
+        fet_id=a["fet_id"],
+        teacher=a["teacher"],
+        subject=a["subject"],
+        group_name=a["group_name"],
+        duration=a["duration"],
+        day=a["day"],
+        start=a["start"],
     )
+)
 
 # Creem els professors
 for name in sorted(teacher_names):
