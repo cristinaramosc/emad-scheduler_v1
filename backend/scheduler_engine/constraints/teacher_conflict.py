@@ -10,6 +10,9 @@ class TeacherConflictConstraint(Constraint):
         occupied = {}
 
         for activity in schedule.all():
+            if not activity.teacher or not activity.day or not activity.start:
+                continue
+
             key = (activity.teacher, activity.day, activity.start)
 
             if key in occupied:

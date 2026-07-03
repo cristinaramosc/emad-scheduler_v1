@@ -10,6 +10,9 @@ class RoomConflictConstraint(Constraint):
         occupied = {}
 
         for activity in schedule.all():
+            if not activity.room or not activity.day or not activity.start:
+                continue
+
             key = (
                 activity.room,
                 activity.day,

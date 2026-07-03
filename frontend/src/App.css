@@ -58,6 +58,11 @@ button:disabled {
   margin: 5px 0 0;
 }
 
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .notice {
   background: #fff7db;
   border: 1px solid #f2d48d;

@@ -71,6 +71,25 @@ export default function App() {
     }
   }
 
+  async function loadFetData() {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(`${API_URL}/scheduler/load-fet`, {
+        method: "POST",
+      });
+      const data = await response.json();
+
+      setActivities(data.activities || []);
+      setConflicts(data.conflicts || []);
+    } catch {
+      setError("No s'ha pogut carregar el fitxer FET.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   useEffect(() => {
     loadData();
   }, []);
@@ -182,9 +201,15 @@ export default function App() {
           <p>{activities.length} activitats · {conflicts.length} conflictes</p>
         </div>
 
-        <button type="button" onClick={loadData} disabled={isLoading || isSaving}>
-          {isLoading ? "Carregant" : "Actualitza"}
-        </button>
+        <div className="topbar-actions">
+          <button type="button" onClick={loadFetData} disabled={isLoading || isSaving}>
+            Carrega FET
+          </button>
+
+          <button type="button" onClick={loadData} disabled={isLoading || isSaving}>
+            {isLoading ? "Carregant" : "Actualitza"}
+          </button>
+        </div>
       </header>
 
       {error && <div className="notice notice--error">{error}</div>}
