@@ -12,7 +12,6 @@ db.query(Teacher).delete()
 
 activities = load_activities("../EMAD_2627_.fet")
 
-# Conjunt per no repetir professors
 teacher_names = set()
 
 for a in activities:
@@ -20,17 +19,18 @@ for a in activities:
     if a["teacher"]:
         teacher_names.add(a["teacher"])
 
-db.add(
-    Activity(
-        fet_id=a["fet_id"],
-        teacher=a["teacher"],
-        subject=a["subject"],
-        group_name=a["group_name"],
-        duration=a["duration"],
-        day=a["day"],
-        start=a["start"],
+    db.add(
+        Activity(
+            fet_id=a["fet_id"],
+            teacher=a["teacher"],
+            subject=a["subject"],
+            group_name=a["group_name"],
+            duration=a["duration"],
+            day=a["day"],
+            start=a["start"],
+            room=a["room"],
+        )
     )
-)
 
 # Creem els professors
 for name in sorted(teacher_names):

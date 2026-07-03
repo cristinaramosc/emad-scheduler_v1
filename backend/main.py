@@ -17,7 +17,6 @@ app.add_middleware(
 app.include_router(teachers_router)
 app.include_router(activities_router)
 
-
 @app.get("/")
 def root():
     return {"missatge": "EMAD Scheduler funciona!"}

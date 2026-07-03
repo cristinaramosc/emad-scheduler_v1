@@ -11,9 +11,9 @@ def load_activities(filename):
     tree = ET.parse(filename)
     root = tree.getroot()
 
-    # ---------------------------------------------------
-    # Llegim totes les hores fixes de les activitats
-    # ---------------------------------------------------
+    # -------------------------
+    # Horaris
+    # -------------------------
 
     timetable = {}
 
@@ -22,13 +22,25 @@ def load_activities(filename):
         activity_id = int(text(c, "Activity_Id"))
 
         timetable[activity_id] = {
-            "day": text(c, "Preferred_Day"),
-            "start": text(c, "Preferred_Hour"),
+            "day": text(c, "Day"),
+            "start": text(c, "Hour"),
         }
 
-    # ---------------------------------------------------
-    # Llegim totes les activitats
-    # ---------------------------------------------------
+    # -------------------------
+    # Aules
+    # -------------------------
+
+    rooms = {}
+
+    for c in root.iter("ConstraintActivityPreferredRoom"):
+
+        activity_id = int(text(c, "Activity_Id"))
+
+        rooms[activity_id] = text(c, "Room")
+
+    # -------------------------
+    # Activitats
+    # -------------------------
 
     activities = []
 
@@ -42,7 +54,7 @@ def load_activities(filename):
 
         fet_id = int(text(activity, "Id"))
 
-        info = timetable.get(
+        schedule = timetable.get(
             fet_id,
             {
                 "day": None,
@@ -57,8 +69,9 @@ def load_activities(filename):
                 "subject": text(activity, "Subject"),
                 "group_name": text(activity, "Students"),
                 "duration": int(text(activity, "Duration") or 1),
-                "day": info["day"],
-                "start": info["start"],
+                "day": schedule["day"],
+                "start": schedule["start"],
+                "room": rooms.get(fet_id),
             }
         )
 
