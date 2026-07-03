@@ -14,6 +14,15 @@ class SchedulerEngine:
     def load(self, schedule: Schedule):
         self.state = schedule
 
+    def move_activity(self, activity_id: int, *, day: str, start: str):
+        for activity in self.state.all():
+            if activity.id == activity_id:
+                activity.day = day
+                activity.start = start
+                return activity
+
+        return None
+
     def validate(self, schedule=None):
         if schedule is None:
             schedule = self.state
