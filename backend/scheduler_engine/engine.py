@@ -12,3 +12,11 @@ class SchedulerEngine:
             conflicts.extend(constraint.validate(schedule))
 
         return conflicts
+    from scheduler_engine.constraints import TeacherConflictConstraint
+
+class SchedulerEngine:
+
+    def __init__(self):
+        self.constraints = [
+            TeacherConflictConstraint(),
+        ]
