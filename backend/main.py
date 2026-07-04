@@ -5,6 +5,7 @@ from routes.teachers import router as teachers_router
 from routes.activities import router as activities_router
 from routes.scheduler import router as scheduler_router
 from routes.scheduler_live import router as scheduler_live_router
+from routes.requirements import router as requirements_router
 
 
 app = FastAPI()
@@ -21,6 +22,7 @@ app.include_router(teachers_router)
 app.include_router(activities_router)
 app.include_router(scheduler_router)
 app.include_router(scheduler_live_router)
+app.include_router(requirements_router)
 
 
 @app.get("/")
