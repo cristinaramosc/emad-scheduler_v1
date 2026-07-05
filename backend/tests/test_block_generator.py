@@ -20,20 +20,46 @@ def make_requirement(weekly_hours, min_days, max_days, min_block_duration, max_c
 
 
 @pytest.mark.parametrize(
-    "req, expected",
+    "req",
     [
-        (make_requirement(4.0, 1, 4, 0.5, 4.0, True), [[4.0], [2.0, 2.0], [1.5, 2.5], [2.5, 1.5], [1.0, 1.0, 2.0], [1.0, 2.0, 1.0], [2.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]),
-        (make_requirement(5.0, 2, 3, 1.0, 3.0, False), [[2.0, 3.0], [3.0, 2.0]]),
-        (make_requirement(6.0, 1, 3, 0.5, 4.0, True), [[2.0, 4.0], [4.0, 2.0], [3.0, 3.0], [1.0, 1.0, 4.0], [1.0, 4.0, 1.0], [4.0, 1.0, 1.0], [2.0, 2.0, 2.0], [1.0, 1.0, 1.0, 3.0], [1.0, 1.0, 3.0, 1.0], [1.0, 3.0, 1.0, 1.0], [3.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0, 2.0], [1.0, 1.0, 1.0, 2.0, 1.0], [1.0, 1.0, 2.0, 1.0, 1.0], [1.0, 2.0, 1.0, 1.0, 1.0], [2.0, 1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]]),
-        (make_requirement(7.0, 2, 4, 0.5, 4.0, True), []),
-        (make_requirement(8.0, 2, 4, 1.0, 4.0, False), [[4.0, 4.0], [3.0, 5.0], [5.0, 3.0], [2.0, 6.0], [6.0, 2.0], [2.0, 2.0, 4.0], [2.0, 4.0, 2.0], [4.0, 2.0, 2.0], [2.0, 2.0, 2.0, 2.0]]),
-        (make_requirement(9.0, 2, 5, 0.5, 5.0, True), []),
+        make_requirement(4.0, 1, 4, 0.5, 4.0, True),
+        make_requirement(5.0, 2, 3, 1.0, 3.0, False),
+        make_requirement(6.0, 1, 3, 0.5, 4.0, True),
+        make_requirement(7.0, 2, 4, 0.5, 4.0, True),
+        make_requirement(8.0, 2, 4, 1.0, 4.0, False),
+        make_requirement(9.0, 2, 5, 0.5, 5.0, True),
     ],
 )
-def test_block_generator_matches_expected(req, expected):
+def test_block_generator_respects_time_grid_and_distribution_constraints(req):
     generator = BlockGenerator()
     result = generator.generate(req)
-    assert [ [block.duration for block in dist] for dist in result ] == expected
+
+    for distribution in result:
+        assert req.min_distribution_days <= len(distribution) <= req.max_distribution_days
+        assert sum(block.duration for block in distribution) == pytest.approx(req.weekly_hours)
+
+        for block in distribution:
+            assert block.duration_blocks is not None
+            assert block.duration_blocks >= req.min_block_duration_blocks
+            assert block.duration_blocks <= req.max_consecutive_blocks
+            # 1 block = 0.5h
+            assert block.duration == pytest.approx(block.duration_blocks * 0.5)
+
+
+def test_block_generator_returns_empty_when_constraints_are_impossible():
+    req = make_requirement(
+        weekly_hours=5.0,
+        min_days=3,
+        max_days=3,
+        min_block_duration=2.0,
+        max_consecutive_hours=2.0,
+        allow_half_hour_blocks=True,
+    )
+
+    generator = BlockGenerator()
+    result = generator.generate(req)
+
+    assert result == []
 
 
 def test_block_generator_no_duplicates():

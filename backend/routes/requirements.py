@@ -4,14 +4,10 @@ from typing import Dict, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from backend.dependencies import get_requirement_service
 from backend.models.teaching_requirement import TeachingRequirement
-from backend.repositories.requirement_repository import RequirementRepository
-from backend.services.requirement_service import RequirementService
 
 router = APIRouter()
-
-repo = RequirementRepository()
-service = RequirementService(repo)
 
 
 class RequirementCreateDTO(BaseModel):
@@ -19,8 +15,10 @@ class RequirementCreateDTO(BaseModel):
     subject_id: str
     teacher_id: str
     weekly_hours: float
-    min_days: int
-    max_days: int
+    min_days: int = 1
+    max_days: int = 2
+    min_distribution_days: int = 1
+    max_distribution_days: int = 2
     min_block_duration: float
     max_consecutive_hours: float
     allow_half_hour_blocks: bool = False
@@ -37,6 +35,8 @@ class RequirementUpdateDTO(BaseModel):
     weekly_hours: Optional[float] = None
     min_days: Optional[int] = None
     max_days: Optional[int] = None
+    min_distribution_days: Optional[int] = None
+    max_distribution_days: Optional[int] = None
     min_block_duration: Optional[float] = None
     max_consecutive_hours: Optional[float] = None
     allow_half_hour_blocks: Optional[bool] = None
@@ -52,18 +52,21 @@ def serialize_requirement(requirement: TeachingRequirement) -> Dict:
 
 @router.get("/requirements")
 def list_requirements():
+    service = get_requirement_service()
     requirements = service.list()
     return [serialize_requirement(r) for r in requirements]
 
 
 @router.post("/requirements")
 def create_requirement(payload: RequirementCreateDTO):
+    service = get_requirement_service()
     created = service.create(payload.dict())
     return serialize_requirement(created)
 
 
 @router.patch("/requirements/{requirement_id}")
 def update_requirement(requirement_id: str, payload: RequirementUpdateDTO):
+    service = get_requirement_service()
     data = {k: v for k, v in payload.dict().items() if v is not None}
     try:
         updated = service.update(requirement_id, data)
@@ -74,6 +77,7 @@ def update_requirement(requirement_id: str, payload: RequirementUpdateDTO):
 
 @router.delete("/requirements/{requirement_id}")
 def delete_requirement(requirement_id: str):
+    service = get_requirement_service()
     deleted = service.delete(requirement_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="requirement_not_found")

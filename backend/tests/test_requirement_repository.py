@@ -1,5 +1,3 @@
-import pytest
-
 from backend.repositories.requirement_repository import RequirementRepository
 from backend.models.teaching_requirement import TeachingRequirement
 

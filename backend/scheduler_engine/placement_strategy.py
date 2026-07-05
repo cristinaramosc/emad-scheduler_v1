@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import math
 from abc import ABC, abstractmethod
 from typing import List, Optional, Sequence, Tuple
 
@@ -31,7 +30,7 @@ class GreedyPlacementStrategy(PlacementStrategy):
         context: GenerationContext,
         current_scheduled_activities: Sequence[ScheduledActivity],
     ) -> Optional[ScheduledActivity]:
-        required_slots = max(1, math.ceil(teaching_block.duration))
+        required_slots = teaching_block.duration_blocks or 1
         existing_activities = list(context.existing_scheduled_activities) + list(context.fixed_activities)
         all_activities = list(existing_activities) + list(current_scheduled_activities)
 
@@ -86,7 +85,7 @@ class GreedyPlacementStrategy(PlacementStrategy):
             if activity.teacher_id != teacher_id:
                 continue
             activity_end = activity.start_timeslot.period + activity.duration
-            candidate_end = start_slot.period + max(1, math.ceil(teaching_block.duration))
+            candidate_end = start_slot.period + (teaching_block.duration_blocks or 1)
             if start_slot.period < activity_end and candidate_end > activity.start_timeslot.period:
                 return True
 
@@ -106,7 +105,7 @@ class GreedyPlacementStrategy(PlacementStrategy):
         if not room_id:
             return False
 
-        required_slots = max(1, math.ceil(teaching_block.duration))
+        required_slots = teaching_block.duration_blocks or 1
         for activity in activities:
             if activity.day != start_slot.day:
                 continue

@@ -3,136 +3,45 @@ from uuid import uuid4
 
 from backend.models.teaching_block import TeachingBlock
 from backend.models.teaching_requirement import TeachingRequirement
+from backend.time_units import blocks_to_hours
 
 
-def _to_units(value: float, unit: float) -> int:
-    return int(round(value / unit))
-
-
-def _from_units(value: int, unit: float) -> float:
-    return value * unit
-
-
-def _is_integral_multiple(value: float, unit: float) -> bool:
-    return abs(round(value / unit) - (value / unit)) < 1e-9
-
-
-def _validate_requirement_units(requirement: TeachingRequirement) -> bool:
-    unit = 0.5 if requirement.allow_half_hour_blocks else 1.0
-    if not _is_integral_multiple(requirement.weekly_hours, unit):
-        return False
-    if not _is_integral_multiple(requirement.min_block_duration, unit):
-        return False
-    if not _is_integral_multiple(requirement.max_consecutive_hours, unit):
-        return False
-    return True
-
-
-def _reference_distributions(requirement: TeachingRequirement) -> List[List[float]] | None:
-    weekly_hours = round(float(requirement.weekly_hours), 3)
-
-    if requirement.allow_half_hour_blocks:
-        if weekly_hours in {7.0, 9.0}:
-            return []
-
-        if weekly_hours == 4.0 and requirement.min_days <= 1 <= requirement.max_days:
-            return [
-                [4.0],
-                [2.0, 2.0],
-                [1.5, 2.5],
-                [2.5, 1.5],
-                [1.0, 1.0, 2.0],
-                [1.0, 2.0, 1.0],
-                [2.0, 1.0, 1.0],
-                [1.0, 1.0, 1.0, 1.0],
-            ]
-
-        if weekly_hours == 6.0 and requirement.min_days <= 1 <= requirement.max_days:
-            return [
-                [2.0, 4.0],
-                [4.0, 2.0],
-                [3.0, 3.0],
-                [1.0, 1.0, 4.0],
-                [1.0, 4.0, 1.0],
-                [4.0, 1.0, 1.0],
-                [2.0, 2.0, 2.0],
-                [1.0, 1.0, 1.0, 3.0],
-                [1.0, 1.0, 3.0, 1.0],
-                [1.0, 3.0, 1.0, 1.0],
-                [3.0, 1.0, 1.0, 1.0],
-                [1.0, 1.0, 1.0, 1.0, 2.0],
-                [1.0, 1.0, 1.0, 2.0, 1.0],
-                [1.0, 1.0, 2.0, 1.0, 1.0],
-                [1.0, 2.0, 1.0, 1.0, 1.0],
-                [2.0, 1.0, 1.0, 1.0, 1.0],
-                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
-            ]
-
-    else:
-        if weekly_hours == 4.0 and requirement.min_days <= 1 <= requirement.max_days:
-            return [[4.0], [2.0, 2.0]]
-
-        if weekly_hours == 5.0 and requirement.min_days <= 2 <= requirement.max_days:
-            return [[2.0, 3.0], [3.0, 2.0]]
-
-        if weekly_hours == 8.0 and requirement.min_days <= 2 <= requirement.max_days:
-            return [
-                [4.0, 4.0],
-                [3.0, 5.0],
-                [5.0, 3.0],
-                [2.0, 6.0],
-                [6.0, 2.0],
-                [2.0, 2.0, 4.0],
-                [2.0, 4.0, 2.0],
-                [4.0, 2.0, 2.0],
-                [2.0, 2.0, 2.0, 2.0],
-            ]
-
-    return None
-
-
-def _generate_unit_distributions(requirement: TeachingRequirement) -> List[List[int]]:
-    unit = 0.5 if requirement.allow_half_hour_blocks else 1.0
-    if not _validate_requirement_units(requirement):
-        return []
-
-    total_units = _to_units(requirement.weekly_hours, unit)
-    min_block_units = _to_units(requirement.min_block_duration, unit)
-    max_block_units = _to_units(requirement.max_consecutive_hours, unit)
-    min_blocks = requirement.min_days
-    max_blocks = requirement.max_days
-
-    if min_blocks == max_blocks:
-        if total_units % min_blocks != 0:
-            return []
-        return [[total_units // min_blocks] * min_blocks]
+def _generate_block_distributions(requirement: TeachingRequirement) -> List[List[int]]:
+    total_blocks = requirement.weekly_blocks
+    min_block_size = requirement.min_block_duration_blocks
+    max_block_size = requirement.max_consecutive_blocks
+    min_distribution_days = requirement.min_distribution_days
+    max_distribution_days = requirement.max_distribution_days
 
     distributions: List[List[int]] = []
 
-    def build(prefix: List[int], remaining: int):
-        if len(prefix) > max_blocks:
-            return
-
-        if remaining == 0:
-            if min_blocks <= len(prefix) <= max_blocks:
+    def build_for_days(prefix: List[int], remaining: int, days_left: int) -> None:
+        if days_left == 0:
+            if remaining == 0:
                 distributions.append(prefix.copy())
             return
 
-        for block_units in range(min_block_units, min(max_block_units, remaining) + 1):
-            prefix.append(block_units)
-            build(prefix, remaining - block_units)
+        min_possible = min_block_size * days_left
+        max_possible = max_block_size * days_left
+        if remaining < min_possible or remaining > max_possible:
+            return
+
+        for block_count in range(min_block_size, min(max_block_size, remaining) + 1):
+            prefix.append(block_count)
+            build_for_days(prefix, remaining - block_count, days_left - 1)
             prefix.pop()
 
-    build([], total_units)
+    for days in range(min_distribution_days, max_distribution_days + 1):
+        build_for_days([], total_blocks, days)
 
     unique: List[List[int]] = []
     seen = set()
     for distribution in distributions:
-        if len(distribution) < min_blocks or len(distribution) > max_blocks:
+        if len(distribution) < min_distribution_days or len(distribution) > max_distribution_days:
             continue
-        if any(size < min_block_units or size > max_block_units for size in distribution):
+        if any(size < min_block_size or size > max_block_size for size in distribution):
             continue
-        if sum(distribution) != total_units:
+        if sum(distribution) != total_blocks:
             continue
         if tuple(distribution) not in seen:
             seen.add(tuple(distribution))
@@ -143,41 +52,30 @@ def _generate_unit_distributions(requirement: TeachingRequirement) -> List[List[
 
 
 def generate_distributions(requirement: TeachingRequirement) -> List[List[float]]:
-    reference = _reference_distributions(requirement)
-    if reference is not None:
-        return reference
+    distributions = _generate_block_distributions(requirement)
+    return [[blocks_to_hours(value) for value in distribution] for distribution in distributions]
 
-    unit = 0.5 if requirement.allow_half_hour_blocks else 1.0
-    distributions = _generate_unit_distributions(requirement)
-    unique = []
-    seen = set()
 
-    for dist_units in distributions:
-        dist = [_from_units(value, unit) for value in dist_units]
-        key = tuple(dist)
-        if key not in seen:
-            seen.add(key)
-            unique.append(dist)
-
-    unique.sort()
-    return unique
+def generate_block_distributions(requirement: TeachingRequirement) -> List[List[int]]:
+    return _generate_block_distributions(requirement)
 
 
 class BlockGenerator:
     """Genera distribucions de TeachingBlocks per a un TeachingRequirement."""
 
     def generate(self, requirement: TeachingRequirement) -> List[List[TeachingBlock]]:
-        distributions = generate_distributions(requirement)
+        block_distributions = generate_block_distributions(requirement)
         result: List[List[TeachingBlock]] = []
 
-        for dist in distributions:
+        for distribution in block_distributions:
             blocks = [
                 TeachingBlock(
                     id=str(uuid4()),
-                    duration=duration,
+                    duration=blocks_to_hours(block_count),
+                    duration_blocks=block_count,
                     order=index + 1,
                 )
-                for index, duration in enumerate(dist)
+                for index, block_count in enumerate(distribution)
             ]
             result.append(blocks)
 

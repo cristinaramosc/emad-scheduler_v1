@@ -36,6 +36,7 @@ def test_update_flow():
     created = svc.create(payload)
     updated = svc.update(created.id, {"weekly_hours": 3.5})
     assert updated.weekly_hours == 3.5
+    assert updated.weekly_blocks == 7
 
 
 def test_delete_flow():
@@ -92,8 +93,19 @@ def test_generate_blocks_from_requirement():
     created = svc.create(payload)
 
     blocks = svc.generate_blocks(created.id)
-    assert len(blocks) == 2
-    assert [ [block.duration for block in dist] for dist in blocks ] == [[4.0], [2.0, 2.0]]
+    assert len(blocks) >= 2
+    assert [[block.duration for block in dist] for dist in blocks][:2] == [[4.0], [1.0, 3.0]]
+
+
+def test_legacy_distribution_fields_remain_supported():
+    repo = RequirementRepository()
+    svc = RequirementService(repo)
+    created = svc.create(valid_payload())
+
+    assert created.min_distribution_days == 1
+    assert created.max_distribution_days == 2
+    assert created.min_days == 1
+    assert created.max_days == 2
 
 
 def test_generate_blocks_not_found():

@@ -101,6 +101,7 @@ class SchedulerGenerator:
                             id=block.id,
                             duration=block.duration,
                             order=block.order,
+                            duration_blocks=block.duration_blocks,
                             preferred_room_id=None,
                             preferred_teacher_id=requirement.teacher_id,
                             fixed=False,
@@ -141,8 +142,8 @@ class SchedulerGenerator:
         blocks = list(teaching_blocks)
         orderings = [blocks[:], list(reversed(blocks))]
 
-        sorted_by_duration_desc = sorted(blocks, key=lambda block: block.duration, reverse=True)
-        sorted_by_duration_asc = sorted(blocks, key=lambda block: block.duration)
+        sorted_by_duration_desc = sorted(blocks, key=lambda block: block.duration_blocks or 0, reverse=True)
+        sorted_by_duration_asc = sorted(blocks, key=lambda block: block.duration_blocks or 0)
         orderings.extend([sorted_by_duration_desc, sorted_by_duration_asc])
 
         if context.random_seed is not None:

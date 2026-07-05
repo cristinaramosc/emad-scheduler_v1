@@ -1,20 +1,20 @@
 import pytest
 from fastapi import HTTPException
 
-from backend.routes.requirements import service
-from backend.routes.scheduler import GenerateRequest, accept_proposal, generate_proposals, proposal_store
+from backend.dependencies import get_proposal_store, get_requirement_service
+from backend.routes.scheduler import GenerateRequest, accept_proposal, generate_proposals
 from backend.scheduler_engine.engine_instance import engine as shared_engine
 from backend.scheduler_engine.models import Activity, Schedule, ScheduleProposal
 
 
 @pytest.fixture(autouse=True)
 def reset_state() -> None:
-    proposal_store.clear()
+    get_proposal_store().clear()
     shared_engine.load(Schedule())
 
 
 def test_scheduler_generation_endpoint_returns_proposals_from_requirements() -> None:
-    requirement = service.create(
+    requirement = get_requirement_service().create(
         {
             "group_id": "g1",
             "subject_id": "s1",
@@ -68,7 +68,7 @@ def test_proposal_can_be_accepted_and_updates_active_schedule() -> None:
             )
         ],
     )
-    proposal_store[proposal.id] = proposal
+    get_proposal_store()[proposal.id] = proposal
 
     result = accept_proposal(proposal.id)
 
@@ -103,7 +103,7 @@ def test_invalid_proposals_cannot_be_accepted() -> None:
             ),
         ],
     )
-    proposal_store[proposal.id] = proposal
+    get_proposal_store()[proposal.id] = proposal
 
     result = accept_proposal(proposal.id)
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Dict
 
 from .constraint_evaluator import ConstraintEvaluator
 from .models import ConstraintReport, GenerationContext, ScheduleProposal, ScoreBreakdown
@@ -40,14 +40,6 @@ class ProposalScorer:
             return 0.0
 
         return 8.0 + report.statistics["activity_count"] - report.statistics["soft_violation_count"] * 1.5
-
-    def _distribution_score(self, proposal: ScheduleProposal, context: GenerationContext) -> float:
-        if not proposal.activities:
-            return 0.0
-
-        days = {activity.day for activity in proposal.activities}
-        activity_count = len(proposal.activities)
-        return max(0.0, 8.0 + activity_count - len(days) * 2.0)
 
     def _distribution_score(self, proposal: ScheduleProposal, context: GenerationContext) -> float:
         if not proposal.activities:
