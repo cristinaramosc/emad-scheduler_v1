@@ -3,11 +3,18 @@ from typing import List, Dict
 
 from fastapi import APIRouter
 
-from schemas.scheduler import MoveDTO
-from services.fet_importer import load_activities
-from scheduler_engine.engine_instance import engine
-from scheduler_engine.models.schedule import Schedule
-from scheduler_engine.models.activity import Activity
+try:
+    from schemas.scheduler import MoveDTO
+    from services.fet_importer import load_activities
+    from scheduler_engine.engine_instance import engine
+    from scheduler_engine.models.schedule import Schedule
+    from scheduler_engine.models.activity import Activity
+except ModuleNotFoundError:  # pragma: no cover - supports tests running from repo root
+    from backend.schemas.scheduler import MoveDTO
+    from backend.services.fet_importer import load_activities
+    from backend.scheduler_engine.engine_instance import engine
+    from backend.scheduler_engine.models.schedule import Schedule
+    from backend.scheduler_engine.models.activity import Activity
 
 router = APIRouter(prefix="/scheduler")
 FET_FILE = Path(__file__).resolve().parents[2] / "EMAD_2627_.fet"
@@ -57,7 +64,19 @@ def load_fet():
     }
 
 
-def serialize_state():
+def _serialize_conflict(conflict):
+    return {
+        "type": conflict.type,
+        "message": conflict.message,
+        "teacher": conflict.teacher,
+        "day": conflict.day,
+        "start": conflict.start,
+        "activities": conflict.activities,
+    }
+
+
+def serialize_state(conflicts=None):
+    active_conflicts = conflicts if conflicts is not None else engine.validate()
     return {
         "activities": [
             {
@@ -72,7 +91,7 @@ def serialize_state():
             }
             for a in engine.state.all()
         ],
-        "conflicts": engine.validate(),
+        "conflicts": [_serialize_conflict(conflict) for conflict in active_conflicts],
     }
 
 
@@ -83,16 +102,29 @@ def state():
 
 @router.post("/move")
 def move(move_data: MoveDTO):
-    activity = engine.move_activity(
-        move_data.activity_id,
-        day=move_data.day,
-        start=move_data.start,
-    )
+    activity = next((item for item in engine.state.all() if item.id == move_data.activity_id), None)
 
     if activity is None:
         return {
             "ok": False,
             "error": "activity_not_found",
+            **serialize_state(),
+        }
+
+    previous_day = activity.day
+    previous_start = activity.start
+
+    activity.day = move_data.day
+    activity.start = move_data.start
+
+    conflicts = engine.validate()
+    if conflicts:
+        activity.day = previous_day
+        activity.start = previous_start
+        return {
+            "ok": False,
+            "error": "validation_failed",
+            "conflicts": [_serialize_conflict(conflict) for conflict in conflicts],
             **serialize_state(),
         }
 

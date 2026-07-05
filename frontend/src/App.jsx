@@ -51,8 +51,13 @@ export default function App() {
   const [draggedActivityId, setDraggedActivityId] = useState(null);
   const [dropTarget, setDropTarget] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isAccepting, setIsAccepting] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [proposal, setProposal] = useState(null);
+  const [selectedActivityId, setSelectedActivityId] = useState(null);
 
   async function loadData() {
     setIsLoading(true);
@@ -90,6 +95,76 @@ export default function App() {
     }
   }
 
+  async function generateProposal() {
+    setIsGenerating(true);
+    setError("");
+    setSuccessMessage("");
+
+    try {
+      const response = await fetch(`${API_URL}/scheduler/generate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          requirement_ids: [],
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "No s'ha pogut generar la proposta.");
+      }
+
+      setProposal(data.best_proposal || null);
+      setActivities((data.best_proposal?.activities || []).map((activity) => ({
+        ...activity,
+        id: activity.id,
+        subject: activity.subject,
+        teacher: activity.teacher,
+        group: activity.group,
+        room: activity.room,
+        day: activity.day,
+        start: activity.start,
+      })));
+      setConflicts(data.best_proposal?.conflicts || []);
+    } catch (err) {
+      setProposal(null);
+      setError(err.message || "No s'ha pogut generar la proposta.");
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  async function acceptProposal() {
+    if (!proposal?.id) {
+      return;
+    }
+
+    setIsAccepting(true);
+    setError("");
+    setSuccessMessage("");
+
+    try {
+      const response = await fetch(`${API_URL}/scheduler/proposal/${proposal.id}/accept`, {
+        method: "POST",
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.detail || "No s'ha pogut acceptar la proposta.");
+      }
+
+      setSuccessMessage("La proposta s'ha acceptat i ara és l'horari actiu.");
+      await loadData();
+    } catch (err) {
+      setError(err.message || "No s'ha pogut acceptar la proposta.");
+    } finally {
+      setIsAccepting(false);
+    }
+  }
+
   useEffect(() => {
     loadData();
   }, []);
@@ -119,6 +194,7 @@ export default function App() {
   async function moveActivity(activityId, day, start) {
     setIsSaving(true);
     setError("");
+    setSuccessMessage("");
 
     try {
       const response = await fetch(`${API_URL}/scheduler/move`, {
@@ -136,7 +212,10 @@ export default function App() {
       const data = await response.json();
 
       if (!data.ok) {
-        setError("No s'ha pogut moure l'activitat.");
+        setError(data.error === "validation_failed" ? "El moviment no és vàlid." : "No s'ha pogut moure l'activitat.");
+        setConflicts(data.conflicts || []);
+      } else {
+        setSuccessMessage("Moviment desat.");
       }
 
       setActivities(data.activities || []);
@@ -171,12 +250,18 @@ export default function App() {
 
   function renderActivity(activity) {
     const hasConflict = conflictIds.has(activity.id);
+    const isSelected = selectedActivityId === activity.id;
 
     return (
       <article
         key={activity.id}
-        className={hasConflict ? "activity-card activity-card--conflict" : "activity-card"}
+        className={[
+          "activity-card",
+          hasConflict ? "activity-card--conflict" : "",
+          isSelected ? "activity-card--selected" : "",
+        ].filter(Boolean).join(" ")}
         draggable
+        onClick={() => setSelectedActivityId(activity.id)}
         onDragStart={() => handleDragStart(activity.id)}
         onDragEnd={() => {
           setDraggedActivityId(null);
@@ -202,18 +287,28 @@ export default function App() {
         </div>
 
         <div className="topbar-actions">
-          <button type="button" onClick={loadFetData} disabled={isLoading || isSaving}>
+          <button type="button" onClick={generateProposal} disabled={isLoading || isSaving || isGenerating}>
+            {isGenerating ? "Generant..." : "Genera proposta"}
+          </button>
+
+          <button type="button" onClick={loadFetData} disabled={isLoading || isSaving || isGenerating}>
             Carrega FET
           </button>
 
-          <button type="button" onClick={loadData} disabled={isLoading || isSaving}>
+          <button type="button" onClick={loadData} disabled={isLoading || isSaving || isGenerating}>
             {isLoading ? "Carregant" : "Actualitza"}
           </button>
         </div>
       </header>
 
       {error && <div className="notice notice--error">{error}</div>}
+      {successMessage && <div className="notice notice--success">{successMessage}</div>}
       {isSaving && <div className="notice">Desant moviment</div>}
+
+      {selectedActivityId !== null && (
+        <div className="notice">Activitat seleccionada: {selectedActivityId}</div>
+      )}
+      {isGenerating && <div className="notice">Generant proposta…</div>}
 
       <section className="scheduler-layout">
         <div className="timetable" aria-label="Horari">
@@ -251,6 +346,40 @@ export default function App() {
         </div>
 
         <aside className="side-panel">
+          <section>
+            <h2>Proposta generada</h2>
+
+            {!proposal ? (
+              <p className="muted">Encara no s'ha generat cap proposta.</p>
+            ) : (
+              <div className="proposal-summary">
+                <div className="proposal-metric">
+                  <span className="metric-label">Puntuació</span>
+                  <strong>{proposal.score ?? "-"}</strong>
+                </div>
+                <button type="button" onClick={acceptProposal} disabled={isAccepting || isGenerating || isSaving}>
+                  {isAccepting ? "Acceptant..." : "Accepta proposta"}
+                </button>
+                <div className="proposal-metric">
+                  <span className="metric-label">Activitats</span>
+                  <strong>{proposal.activities?.length ?? 0}</strong>
+                </div>
+                <div className="proposal-metric">
+                  <span className="metric-label">Conflictes</span>
+                  <strong>{proposal.conflicts?.length ?? 0}</strong>
+                </div>
+                <ul className="activity-list">
+                  {(proposal.activities || []).map((activity) => (
+                    <li key={activity.id}>
+                      <strong>{activity.subject}</strong>
+                      <span>{activity.teacher} · {activity.day} · {activity.start}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </section>
+
           <section>
             <h2>Conflictes</h2>
 
