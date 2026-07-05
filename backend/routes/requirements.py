@@ -4,10 +4,9 @@ from typing import Dict, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from services.requirement_service import RequirementService
-from repositories.requirement_repository import RequirementRepository
-
 from backend.models.teaching_requirement import TeachingRequirement
+from backend.repositories.requirement_repository import RequirementRepository
+from backend.services.requirement_service import RequirementService
 
 router = APIRouter()
 
