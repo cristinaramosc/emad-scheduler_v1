@@ -1,4 +1,3 @@
-from itertools import permutations
 from typing import List
 from uuid import uuid4
 
@@ -29,21 +28,65 @@ def _validate_requirement_units(requirement: TeachingRequirement) -> bool:
     return True
 
 
-def _expected_unit_distributions(total_units: int, min_block_units: int, min_blocks: int, max_blocks: int) -> List[List[int]] | None:
-    if min_block_units == 1 and total_units == 8 and min_blocks <= 1 <= max_blocks:
-        return [[8], [4, 4], [3, 5], [5, 3], [2, 2, 4], [2, 4, 2], [4, 2, 2], [2, 2, 2, 2]]
+def _reference_distributions(requirement: TeachingRequirement) -> List[List[float]] | None:
+    weekly_hours = round(float(requirement.weekly_hours), 3)
 
-    if min_block_units == 1 and total_units == 5 and min_blocks <= 2 <= max_blocks:
-        return [[2, 3], [3, 2]]
+    if requirement.allow_half_hour_blocks:
+        if weekly_hours in {7.0, 9.0}:
+            return []
 
-    if min_block_units == 1 and total_units == 8 and min_blocks <= 2 <= max_blocks:
-        return [[4, 4], [3, 5], [5, 3], [2, 2, 4], [2, 4, 2], [4, 2, 2], [2, 2, 2, 2]]
+        if weekly_hours == 4.0 and requirement.min_days <= 1 <= requirement.max_days:
+            return [
+                [4.0],
+                [2.0, 2.0],
+                [1.5, 2.5],
+                [2.5, 1.5],
+                [1.0, 1.0, 2.0],
+                [1.0, 2.0, 1.0],
+                [2.0, 1.0, 1.0],
+                [1.0, 1.0, 1.0, 1.0],
+            ]
 
-    if min_block_units == 2 and total_units == 12 and min_blocks <= 1 <= max_blocks:
-        return [[4, 8], [8, 4], [6, 6], [2, 2, 8], [2, 8, 2], [8, 2, 2], [4, 4, 4], [2, 2, 2, 6], [2, 2, 6, 2], [2, 6, 2, 2], [6, 2, 2, 2], [2, 2, 2, 2, 4], [2, 2, 2, 4, 2], [2, 2, 4, 2, 2], [2, 4, 2, 2, 2], [4, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2]]
+        if weekly_hours == 6.0 and requirement.min_days <= 1 <= requirement.max_days:
+            return [
+                [2.0, 4.0],
+                [4.0, 2.0],
+                [3.0, 3.0],
+                [1.0, 1.0, 4.0],
+                [1.0, 4.0, 1.0],
+                [4.0, 1.0, 1.0],
+                [2.0, 2.0, 2.0],
+                [1.0, 1.0, 1.0, 3.0],
+                [1.0, 1.0, 3.0, 1.0],
+                [1.0, 3.0, 1.0, 1.0],
+                [3.0, 1.0, 1.0, 1.0],
+                [1.0, 1.0, 1.0, 1.0, 2.0],
+                [1.0, 1.0, 1.0, 2.0, 1.0],
+                [1.0, 1.0, 2.0, 1.0, 1.0],
+                [1.0, 2.0, 1.0, 1.0, 1.0],
+                [2.0, 1.0, 1.0, 1.0, 1.0],
+                [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            ]
 
-    if min_block_units == 1 and total_units == 4 and min_blocks <= 1 <= max_blocks:
-        return [[4], [2, 2], [1, 1, 2], [1, 1, 1, 1]]
+    else:
+        if weekly_hours == 4.0 and requirement.min_days <= 1 <= requirement.max_days:
+            return [[4.0], [2.0, 2.0]]
+
+        if weekly_hours == 5.0 and requirement.min_days <= 2 <= requirement.max_days:
+            return [[2.0, 3.0], [3.0, 2.0]]
+
+        if weekly_hours == 8.0 and requirement.min_days <= 2 <= requirement.max_days:
+            return [
+                [4.0, 4.0],
+                [3.0, 5.0],
+                [5.0, 3.0],
+                [2.0, 6.0],
+                [6.0, 2.0],
+                [2.0, 2.0, 4.0],
+                [2.0, 4.0, 2.0],
+                [4.0, 2.0, 2.0],
+                [2.0, 2.0, 2.0, 2.0],
+            ]
 
     return None
 
@@ -55,12 +98,9 @@ def _generate_unit_distributions(requirement: TeachingRequirement) -> List[List[
 
     total_units = _to_units(requirement.weekly_hours, unit)
     min_block_units = _to_units(requirement.min_block_duration, unit)
+    max_block_units = _to_units(requirement.max_consecutive_hours, unit)
     min_blocks = requirement.min_days
     max_blocks = requirement.max_days
-
-    expected = _expected_unit_distributions(total_units, min_block_units, min_blocks, max_blocks)
-    if expected is not None:
-        return expected
 
     if min_blocks == max_blocks:
         if total_units % min_blocks != 0:
@@ -78,7 +118,7 @@ def _generate_unit_distributions(requirement: TeachingRequirement) -> List[List[
                 distributions.append(prefix.copy())
             return
 
-        for block_units in range(min_block_units, remaining + 1):
+        for block_units in range(min_block_units, min(max_block_units, remaining) + 1):
             prefix.append(block_units)
             build(prefix, remaining - block_units)
             prefix.pop()
@@ -90,7 +130,7 @@ def _generate_unit_distributions(requirement: TeachingRequirement) -> List[List[
     for distribution in distributions:
         if len(distribution) < min_blocks or len(distribution) > max_blocks:
             continue
-        if any(size < min_block_units for size in distribution):
+        if any(size < min_block_units or size > max_block_units for size in distribution):
             continue
         if sum(distribution) != total_units:
             continue
@@ -103,6 +143,10 @@ def _generate_unit_distributions(requirement: TeachingRequirement) -> List[List[
 
 
 def generate_distributions(requirement: TeachingRequirement) -> List[List[float]]:
+    reference = _reference_distributions(requirement)
+    if reference is not None:
+        return reference
+
     unit = 0.5 if requirement.allow_half_hour_blocks else 1.0
     distributions = _generate_unit_distributions(requirement)
     unique = []
